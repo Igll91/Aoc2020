@@ -34,10 +34,29 @@ public:
     }
 };
 
-std::vector<std::pair<PasswordPolicy, std::string>> getFileValues(const std::string filePath)
+class CharPasswordPolicy : public PasswordPolicy
+{
+public:
+
+    CharPasswordPolicy(const std::string sequence, const int limitLow, const int limitHigh)
+        : PasswordPolicy(sequence, limitLow, limitHigh)
+    {
+    }
+
+    bool isValid(const std::string password)
+    {
+        const char firstChar = password.at(limitLow-1);
+        const char secondChar = password.at(limitHigh-1);
+
+        return (sequence.find(firstChar) != std::string::npos) ^ (sequence.find(secondChar) != std::string::npos);
+    }
+};
+
+template <typename T>
+std::vector<std::pair<T, std::string>> getFileValues(const std::string filePath)
 {
     std::ifstream file;
-    std::vector<std::pair<PasswordPolicy, std::string>> values;
+    std::vector<std::pair<T, std::string>> values;
     std::string str;
 
     file.open (filePath, std::ifstream::in);
@@ -49,7 +68,7 @@ std::vector<std::pair<PasswordPolicy, std::string>> getFileValues(const std::str
         while (std::getline(file, str)) {
             if(std::regex_search(str, match, regexp))
             {
-                PasswordPolicy passwordPolicy(match[3], std::stoi(match[1]), std::stoi(match[2]));
+                T passwordPolicy(match[3], std::stoi(match[1]), std::stoi(match[2]));
                 values.push_back({ passwordPolicy, match[4] });
             }
         }
@@ -75,14 +94,29 @@ void taskPartOne(std::vector<std::pair<PasswordPolicy, std::string>> values)
     std::cout << "Num of valid passwords: " << numOfValidPasswords << std::endl;
 }
 
+void taskPartTwo(std::vector<std::pair<CharPasswordPolicy, std::string>> values)
+{
+    int numOfValidPasswords = 0;
+    for(auto val: values)
+    {
+        std::cout << val.first.sequence << " (" << val.first.limitLow << "," << val.first.limitHigh << ")" << " - " << val.second << std::endl;
+
+        if(val.first.isValid(val.second)){
+            numOfValidPasswords++;
+        }
+    }
+
+    std::cout << "Num of valid passwords: " << numOfValidPasswords << std::endl;
+}
+
 int main() {
     std::cout << "Aoc 2020 task Day2!" << std::endl;
 
-    auto values = getFileValues("../input.txt");
+    auto values = getFileValues<CharPasswordPolicy>("../input.txt");
 
     std::cout << "Num of elements: " << values.size() << std::endl;
 
-    taskPartOne(values);
+    taskPartTwo(values);
 
     return 0;
 }
